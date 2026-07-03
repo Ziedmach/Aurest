@@ -1,0 +1,74 @@
+import type { BuyerProfile } from "./buyer-data";
+import type { PropertyRecord } from "./property-data";
+import { buyerSpecificNeighbourhoodFit, estimateRentalYield, getAreaBenchmark, getDldComparables, getNearbyPlaces, summarizeComparables } from "./market-intel";
+import { scoreBuyerProperty } from "./matching-engine";
+
+export type ReportTemplateId="investor"|"family"|"off-plan"|"luxury"|"rental-yield"|"short"|"comparison"|"viewing-prep";
+export type ReportStatus="Draft"|"Ready"|"Shared";
+export type BrandingMode="personal"|"team"|"agency"|"co-brand";
+export type ReportSection={id:string;title:string;content:string;enabled:boolean};
+export type PublicReportLink={enabled:boolean;token:string;expiresAt:string;views:number;password?:string};
+export type StudioReport={id:string;title:string;buyerId:string;buyerName:string;propertyIds:string[];propertyTitles:string[];areas:string[];templateId:ReportTemplateId;templateName:string;brandingMode:BrandingMode;language:string;tone:string;status:ReportStatus;updatedAt:string;createdBy:string;sections:ReportSection[];publicLink:PublicReportLink;includeComparison:boolean;includeDealScore:boolean;includeFitMatrix:boolean};
+
+export const reportTemplates:Array<{id:ReportTemplateId;name:string;description:string;focus:string;tone:string}>=[
+  {id:"investor",name:"Investor report",description:"Returns, comparables, liquidity and risk",focus:"investment evidence",tone:"Analytical"},
+  {id:"family",name:"Family relocation report",description:"Schools, commute, lifestyle and suitability",focus:"family liveability",tone:"Consultative"},
+  {id:"off-plan",name:"Off-plan report",description:"Developer, payment plan, handover and risk",focus:"project and delivery",tone:"Evidence-led"},
+  {id:"luxury",name:"Luxury buyer report",description:"Scarcity, privacy, finish and prestige",focus:"premium lifestyle",tone:"Refined"},
+  {id:"rental-yield",name:"Rental yield report",description:"Income, occupancy, costs and scenarios",focus:"rental performance",tone:"Data-heavy"},
+  {id:"short",name:"Short recommendation report",description:"Concise buyer-ready recommendation",focus:"decision summary",tone:"Concise"},
+  {id:"comparison",name:"Property comparison report",description:"2–5 options with matrix and best choice",focus:"trade-off comparison",tone:"Advisory"},
+  {id:"viewing-prep",name:"Viewing preparation report",description:"Questions, objections and inspection checklist",focus:"viewing decision support",tone:"Practical"},
+];
+
+export function generateReportSections(buyer:BuyerProfile,properties:PropertyRecord[],templateId:ReportTemplateId):ReportSection[]{
+  const lead=properties[0]; const multi=properties.length>1; const names=properties.map((property)=>property.title).join(", ");
+  const ranked=properties.map((property)=>({property,match:scoreBuyerProperty(buyer,property)})).sort((a,b)=>b.match.score-a.match.score);
+  const best=ranked[0];
+  const benchmark=getAreaBenchmark(lead); const comparables=getDldComparables(lead); const comparableSummary=summarizeComparables(comparables); const yieldEstimate=estimateRentalYield(lead); const nearby=getNearbyPlaces(lead.neighbourhood).filter((place)=>place.selected).slice(0,5); const neighbourhoodFit=buyerSpecificNeighbourhoodFit(buyer,lead.neighbourhood);
+  const sections:Array<[string,string,string]>=[
+    ["requirements","Buyer requirements",`${buyer.name} is looking for ${buyer.purpose} options with AED ${buyer.budgetMin.toLocaleString()}–${buyer.budgetMax.toLocaleString()} budget, ${buyer.bedrooms||"studio"} bedroom target, preferred areas ${buyer.preferredAreas.join(", ")}, and property types ${buyer.propertyTypes.join(", ")}.`],
+    ["persona","Buyer persona",`${buyer.persona}: ${buyer.personaExplanation} The report tone and recommendation logic prioritise ${buyer.needsSummary.salesAngle || buyer.investmentObjective || buyer.lifestylePreferences}.`],
+    ["executive","Executive summary",multi?`${buyer.name} is considering ${properties.length} shortlisted properties. Based on the stated budget, location preferences, lifestyle needs and investment objective, ${best.property.title} currently offers the strongest overall balance with ${best.match.score}% buyer fit and ${best.match.dealLabel.toLowerCase()} deal score. The report makes every trade-off explicit before a viewing or offer decision.`:`${lead.title} is a ${lead.propertyType.toLowerCase()} in ${lead.neighbourhood} positioned for ${buyer.name}. It aligns with the buyer’s ${buyer.persona.toLowerCase()} profile through location, configuration and market positioning, subject to final legal, technical and financial verification.`],
+    ["fit","Buyer fit explanation",`${buyer.name} is seeking ${buyer.bedrooms||"studio"}-bedroom ${buyer.propertyTypes.join(" or ").toLowerCase()} options in ${buyer.preferredAreas.join(" or ")}, within AED ${buyer.budgetMin.toLocaleString()}–${buyer.budgetMax.toLocaleString()}. Key decision drivers are ${buyer.lifestylePreferences.toLowerCase()} and ${buyer.investmentObjective.toLowerCase()}.`],
+    ["overview","Shortlisted properties",multi?`${names}. The shortlist contains ${properties.map((property)=>`${property.rooms||"studio"}-bedroom ${property.propertyType.toLowerCase()} in ${property.neighbourhood}`).join("; ")}.`:`${lead.title} offers ${lead.rooms||"studio"} bedrooms, ${lead.baths??"unconfirmed"} bathrooms and ${lead.areaSqFt.toLocaleString()} sq ft. Asking price: AED ${lead.price.toLocaleString()}. Completion: ${lead.completionStatus}.`],
+    ["price","Price analysis",`${lead.title} is listed at approximately AED ${Math.round(lead.price/Math.max(lead.areaSqFt,1)).toLocaleString()} per sq ft. ${lead.neighbourhood} benchmark: median sale AED ${benchmark.medianSalePrice.toLocaleString()}, median AED/m² ${benchmark.medianAedPerM2.toLocaleString()}, sample ${benchmark.listingCount} listings as of ${benchmark.sourceDate}. The asking price should be validated against recent DLD transactions, current competing listings, floor/view premiums and the property’s condition before negotiation.`],
+    ["dld","DLD comparable transactions",`Matched comparables show an average sold price of AED ${comparableSummary.averagePrice.toLocaleString()} and average AED/m² of ${comparableSummary.averageAedPerM2.toLocaleString()} as of ${comparableSummary.sourceDate}. Sample:\n${comparables.map((item)=>`${item.transactionDate}: ${item.building}, ${item.bedrooms||"studio"} bed, ${item.sizeSqFt.toLocaleString()} sq ft, sold AED ${item.soldPrice.toLocaleString()}`).join("\n")}`],
+    ["yield","Rental yield estimate",`Estimated annual rent: AED ${yieldEstimate.annualRent.toLocaleString()}. Indicative gross yield: ${yieldEstimate.grossYield}%. Assumptions: ${yieldEstimate.assumptions.join(" ")}`],
+    ["area","Area and neighbourhood summary",`${neighbourhoodFit} Demand, service charges, supply pipeline and building-specific performance should be considered alongside the wider area narrative.`],
+    ["schools","Nearby schools",buyer.schoolNeeds.toLowerCase()==="not required"?"School proximity is not a stated requirement. Nearby education options are included for future resale and tenant-market relevance.":`The buyer requires ${buyer.schoolNeeds.toLowerCase()}. Travel times, admission availability and curriculum suitability should be confirmed directly with shortlisted schools.`],
+    ["hospitals","Nearby hospitals","Primary clinics and major hospital access are available within the wider district. Exact driving times depend on traffic and should be checked at the buyer’s typical travel hours."],
+    ["nearby","Nearby places",nearby.map((place)=>`${place.category}: ${place.name} · ${place.distanceKm} km${place.drivingMinutes?` · ${place.drivingMinutes} min drive`:""}${place.walkingMinutes?` · ${place.walkingMinutes} min walk`:""}`).join("\n")],
+    ["malls","Nearby malls and daily amenities","Retail, supermarkets, dining and leisure options support daily use. The report prioritises practical access rather than promotional distance claims."],
+    ["transport","Transport access",`Commute relevance is assessed against ${buyer.workLocation||"the buyer’s daily destinations"}. Metro, road connectivity, parking and peak-hour journey times should be confirmed during the viewing stage.`],
+    ["investment","Investment view",`${lead.estimatedYield?`Illustrative gross yield is ${lead.estimatedYield}%. `:"Yield requires rent validation. "}Investment assessment considers achievable rent, service charges, vacancy, maintenance, future supply and exit liquidity. No return is guaranteed.`],
+    ["family","Family suitability",`The property is reviewed for layout efficiency, privacy, community environment, schools, outdoor space and daily logistics. Family suitability depends on the buyer’s ${buyer.familySize}-person household and stated priorities.`],
+    ["pros-cons","Pros and cons",`Pros: alignment with selected area; practical property configuration; marketable location; clear buyer-fit narrative.\nCons: benchmark and service-charge validation required; viewing needed to confirm condition, outlook and noise; availability may change.`],
+    ["risks","Risks and due diligence","Verify title and ownership, developer/building records, service-charge statement, physical condition, tenancy status, finance valuation, DLD transaction evidence and all material representations before commitment."],
+    ["next-step","Recommended next step",multi?`Book viewings in ranked order, starting with ${best.property.title}. Use the other options as trade-off anchors for price, area, lifestyle and negotiation leverage.`:`Proceed to a structured viewing and document review. The property merits consideration, but the offer strategy should depend on verified comparables, condition and the buyer’s final financing position.`],
+    ["recommendation","Best match recommendation",multi?`${best.property.title} is recommended as the current best match because it scores ${best.match.score}% for buyer fit. Main upside: ${best.match.dealUpside} Main risk: ${best.match.dealRisk}`:`The recommended action is to validate the property through viewing, official documents, comparable evidence and final buyer financing checks.`],
+    ["disclaimer","Disclaimer note","This report is an advisory comparison based on available listing, buyer and market signals. It is not a valuation, legal advice, financial advice or a guarantee of availability, yield, appreciation or transaction outcome."],
+  ];
+  if(multi)sections.splice(5,0,["comparison","Comparison matrix",comparisonText(buyer,properties)],["location-comparison","Location comparison",properties.map((property)=>`${property.title}: ${property.neighbourhood}, ${property.building || "building not available"}, nearby POIs: ${getNearbyPlaces(property.neighbourhood).filter((place)=>place.selected).slice(0,3).map((place)=>place.name).join(", ") || "Not available"}.`).join("\n")]);
+  if(templateId==="short")return sections.filter(([id])=>["executive","fit","overview","pros-cons","recommendation"].includes(id)).map(toSection);
+  if(templateId==="investor"||templateId==="rental-yield")return sections.filter(([id])=>id!=="family").map(toSection);
+  if(templateId==="family")return sections.filter(([id])=>id!=="investment"||Boolean(lead.estimatedYield)).map(toSection);
+  if(templateId==="viewing-prep")return sections.filter(([id])=>["requirements","overview","nearby","pros-cons","risks","next-step","disclaimer"].includes(id)).map(toSection);
+  return sections.map(toSection);
+}
+function toSection(item:[string,string,string]):ReportSection{return{id:item[0],title:item[1],content:item[2],enabled:true};}
+function comparisonText(buyer:BuyerProfile,properties:PropertyRecord[]){
+  return properties.map((property)=>{
+    const match=scoreBuyerProperty(buyer,property);
+    const rent=estimateRentalYield(property);
+    const schools=getNearbyPlaces(property.neighbourhood).filter((place)=>place.category==="Schools").slice(0,2).map((place)=>place.name).join(", ")||"Not available";
+    const transport=getNearbyPlaces(property.neighbourhood).filter((place)=>place.category==="Metro stations"||place.category==="Business districts").slice(0,2).map((place)=>place.name).join(", ")||"Not available";
+    return `${property.title}: Price AED ${property.price.toLocaleString()} | AED/sq ft ${Math.round(property.price/Math.max(property.areaSqFt,1)).toLocaleString()} | Size ${property.areaSqFt.toLocaleString()} sq ft | Beds ${property.rooms||"Studio"} | Baths ${property.baths??"Not available"} | Area ${property.neighbourhood} | Project ${property.building||"Not available"} | Developer ${property.developer||"Not available"} | Completion ${property.completionStatus} | Handover ${property.completionStatus==="Off-plan"?"To be confirmed":"Ready"} | Payment plan ${property.paymentPlan||"Not available"} | Est. rent AED ${rent.annualRent.toLocaleString()} | Yield ${rent.grossYield}% | Schools ${schools} | Transport ${transport} | Match ${match.score}% | Deal ${match.dealScore}/100 ${match.dealLabel} | Pros ${match.reasons.slice(0,2).join("; ")||"Not available"} | Cons ${match.mismatches.slice(0,2).join("; ")||"Not available"}`;
+  }).join("\n");
+}
+
+export const initialReports:StudioReport[]=[
+  {id:"rep_001",title:"Marina Vista investment case",buyerId:"buy_omar",buyerName:"Omar Al Mansoori",propertyIds:["p_bayut_101"],propertyTitles:["Marina Vista · Full Sea View"],areas:["Dubai Marina"],templateId:"investor",templateName:"Investor report",brandingMode:"personal",language:"English",tone:"Analytical",status:"Shared",updatedAt:"Today · 09:42",createdBy:"Zied",sections:[],publicLink:{enabled:true,token:"rpt_7Qk3N9xP",expiresAt:"30 Jul 2026",views:4},includeComparison:false,includeDealScore:true,includeFitMatrix:true},
+  {id:"rep_002",title:"Dubai Hills family shortlist",buyerId:"buy_sarah",buyerName:"Sarah Ahmed",propertyIds:["p_bayut_102","p_manual_104"],propertyTitles:["Park Heights · Boulevard View","Sidra Family Villa · Green Belt"],areas:["Dubai Hills"],templateId:"comparison",templateName:"Property comparison report",brandingMode:"team",language:"English",tone:"Consultative",status:"Ready",updatedAt:"Yesterday",createdBy:"Zied",sections:[],publicLink:{enabled:false,token:"",expiresAt:"",views:0},includeComparison:true,includeDealScore:false,includeFitMatrix:true},
+  {id:"rep_003",title:"Downtown relocation options",buyerId:"buy_james",buyerName:"James Liu",propertyIds:["p_dubizzle_103"],propertyTitles:["Creek Palace · Skyline Residence"],areas:["Dubai Creek Harbour"],templateId:"short",templateName:"Short recommendation report",brandingMode:"personal",language:"English",tone:"Concise",status:"Draft",updatedAt:"22 Jun",createdBy:"Maya",sections:[],publicLink:{enabled:false,token:"",expiresAt:"",views:0},includeComparison:false,includeDealScore:false,includeFitMatrix:true},
+];
