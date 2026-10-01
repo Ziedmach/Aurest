@@ -3,8 +3,9 @@
 Source: `source/Acronis_Cyber_Cloud_Calculator_C26.09_USD.xlsx`, the Acronis Cyber Cloud
 Calculator, price list version **C26.09**, currency **USD**. All prices are **what Next Step
 pays Acronis per unit per month** under the service-provider (Cyber Protect Cloud) model.
-Customer prices are set by Next Step on top of these. The quote model with margin is a
-later step (see `../README.md`, roadmap).
+Customer prices are set by Next Step on top of these, using the quote model
+`acronis-quote-model.xlsx` (section 5 below). The margin percentages in the model are
+placeholders until the margin policy is decided.
 
 Files in this folder:
 
@@ -12,6 +13,7 @@ Files in this folder:
 |---|---|
 | `acronis-pricelist-C26.09-usd.csv` / `.json` | All 119 SKUs with the 8 commitment-tier prices, flattened from the `Pricelist USD` sheet |
 | `acronis-datacenters.csv` | The 39 Acronis data centers with their storage group (G1/G2) and feature availability |
+| `acronis-quote-model.xlsx` | The quote model: inputs, price list, quote builder, tier analysis, customer-facing summary (section 5) |
 | `source/…xlsx` | The original calculator. Keep it untouched. Replace it when Acronis publishes a new version and re-run the export (script in `../90-templates/export-pricelist.py`) |
 
 ## 1. How Acronis Cyber Protect Cloud pricing works
@@ -169,7 +171,41 @@ service (for example XDR only, or M365 backup only).
 6. The tier is a Next Step decision. Model the portfolio each quarter: when committed
    consumption is approaching the next tier, moving up usually pays for itself.
 
-## 4. Refreshing this reference
+## 5. The quote model (`acronis-quote-model.xlsx`)
+
+Built by `../90-templates/build-quote-model.py` from the JSON export. Six sheets:
+
+| Sheet | Purpose |
+|---|---|
+| `Inputs` | Customer, reference, date, currency, FX rate (local per USD), VAT, Next Step commitment tier, term, validity, rounding. Margin defaults by SKU family. Managed-service and one-time fees. Blue cells are inputs; yellow cells are the ones to set for every quote. |
+| `Pricelist` | All 119 SKUs with the 8 tier prices and a "price at selected tier" column that follows the tier chosen in Inputs. Replace this sheet (or rebuild the file) when a new calculator version arrives. |
+| `Quote` | Up to 30 lines. Pick the SKU name from the dropdown, enter the quantity, optionally override the margin. Each line shows buy price, margin, unit sell in USD and local currency, monthly buy, monthly sell and annual sell. Totals block adds the managed-service fee, VAT, annual and contract values, gross profit and blended margin. |
+| `Tier analysis` | The same quantities costed at every commitment tier, with the saving versus the selected tier. Use it to judge whether a deal justifies moving the portfolio up a tier. |
+| `Summary` | Customer-facing lines and totals in the quote currency, ready to paste into section 5 of the proposal template. |
+| `Data centers` | Reference list of Acronis data centers and storage groups. |
+
+How a sell price is formed: unit sell (USD) = unit buy ÷ (1 − margin); unit sell (local) =
+unit sell (USD) × FX rate, rounded to the decimals set in Inputs. Margin is therefore gross
+margin on the sell price, not a markup on cost. A 35 percent margin equals a 54 percent markup.
+
+Margin families and placeholder defaults (to be replaced by the margin policy): Bundles 35
+percent, Security 40, Backup & DR 35, Storage 25, Operations 30, Infrastructure 20, Other 10.
+The managed-service fee defaults to 15 per protected workload per month in the quote
+currency, plus an optional fixed fee; onboarding defaults to 7,500 one-time. All are inputs.
+
+The file ships with the Scenario A example (Saudi SMB, Ultimate Protection, Abu Dhabi G2,
+tier 1,000, SAR at 3.75, VAT 15 percent) in the first four quote lines. Overwrite them.
+
+Rebuild after a price-list change:
+
+```bash
+python3 workspaces/acronis/90-templates/build-quote-model.py workspaces/acronis/30-pricing/acronis-pricelist-<version>-usd.json workspaces/acronis/30-pricing/acronis-quote-model.xlsx
+```
+
+then open the file in Excel or LibreOffice once so every formula is recalculated before
+sharing it.
+
+## 6. Refreshing this reference
 
 When Acronis publishes a new calculator version, drop it into `source/`, update the version
 in the file names, and run:

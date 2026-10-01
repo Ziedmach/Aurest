@@ -37,9 +37,12 @@ facts and update it rather than this file when facts change.
 - Eight commitment tiers: 250, 500, 1,000, 2,000, 4,000, 7,000, 10,000, 15,000 USD per month.
 - Data center groups: G1 (most DCs) and G2 (Abu Dhabi, Johannesburg, Taipei). No Acronis DC
   in Saudi Arabia; in-Kingdom residency is served with Next Step hosted storage.
-- Customer pricing and margin model: **not yet defined** (deliberately deferred). Never
-  invent a Next Step sell price; quote buy prices as "Acronis list to partner" and mark
-  margin as to be decided.
+- Quote model: `30-pricing/acronis-quote-model.xlsx`, rebuilt by
+  `90-templates/build-quote-model.py`. Sell price = buy ÷ (1 − margin) × FX rate.
+- Margin policy: **not yet decided**. The model carries placeholder margins by SKU family
+  (Bundles 35 percent, Security 40, Backup & DR 35, Storage 25, Operations 30,
+  Infrastructure 20, Other 10). Never present these as approved; label any customer price
+  derived from them as indicative until the policy is logged in `10-strategy/decisions-log.md`.
 
 ## Voice and format rules
 
