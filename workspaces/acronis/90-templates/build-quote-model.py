@@ -7,7 +7,10 @@ Usage:
 After building, recalculate the workbook with LibreOffice (see 30-pricing/README.md)
 so every formula carries a cached value before the file is shared.
 """
+import csv
 import json
+import os
+import re
 import sys
 
 from openpyxl import Workbook
@@ -18,7 +21,6 @@ from openpyxl.worksheet.datavalidation import DataValidation
 
 FONT = "Arial"
 EMERALD = "014737"
-GOLD = "C6A87A"
 PALE = "EAF2EE"
 INPUT_BLUE = "0000FF"
 YELLOW = "FFFF00"
@@ -37,6 +39,36 @@ MARGIN_FAMILIES = [
     ("Infrastructure", 0.20, "Cyber Frame, Cyber Infrastructure, Cyber Workspace"),
     ("Other", 0.10, "Pass-through services such as physical data shipping"),
 ]
+
+# Pricelist sheet layout (1-based columns)
+PL_GROUP, PL_CAT, PL_DC, PL_CODE, PL_NAME, PL_FULL, PL_FAMILY = 1, 2, 3, 4, 5, 6, 7
+PL_TIER0 = 8  # first tier price column (H); tiers occupy H..O
+PL_SELECTED = PL_TIER0 + len(TIERS)  # P
+PL_HEADER_ROW, PL_TIER_ROW, PL_FIRST = 3, 4, 5
+
+
+def display_name(name):
+    """Shorter, unique SKU label for dropdowns and customer-facing lines."""
+    n = re.sub(r"\s*-\s*Acronis Cyber (Protect|Files) Cloud\s*\d?$", "", name)
+    reps = [
+        ("Solution-based Licensing - ", "SBL · "), ("Solution-based licensing - ", "SBL · "),
+        ("(with unlimited Acronis Hosted Cloud storage1)", "(unlimited storage)"),
+        ("(unlimited Acronis Hosted Cloud Storage included1)", "(unlimited storage)"),
+        ("(unlimited Acronis Hosted Cloud storage1)", "(unlimited storage)"),
+        ("of Acronis Hosted Storage included", "storage included"),
+        ("Managed Detection and Response (MDR)", "MDR"), ("Managed Detection and Response", "MDR"),
+        ("Acronis Hosted Storage", "Acronis storage"), ("Acronis Hosted", "Acronis hosted"),
+        (" - WL - ", " · "), (" - GB - ", " (per GB) · "), ("storage1", "storage"),
+        ("for per Workload model", "per-workload model"), ("for per GB model", "per-GB model"),
+        ("(for SP/Customer/Azure/Google Hosted storage)", "(partner/Azure/Google storage)"),
+        ("(for SP/Azure/Google Hosted storage)", "(partner/Azure/Google storage)"),
+        ("(for SP/Azure/Google Hosted storag", "(partner/Azure/Google storage"),
+        ("Ultimate Protection", "Ultimate"), ("per month3", "per month"),
+        ("Public Floating IPv4, allocated IP addresses", "Public IPv4"),
+    ]
+    for a, b in reps:
+        n = n.replace(a, b)
+    return re.sub(r"\s+", " ", n).strip(" -")
 
 
 def margin_family(sku):
@@ -72,11 +104,8 @@ def style_header(ws, row, first_col, last_col):
 def set_font(ws):
     for row in ws.iter_rows():
         for cell in row:
-            if cell.font.name != FONT or cell.font.bold or cell.font.color:
-                cell.font = Font(name=FONT, size=cell.font.size or 10, bold=cell.font.bold,
-                                 color=cell.font.color, italic=cell.font.italic)
-            else:
-                cell.font = Font(name=FONT, size=10)
+            f = cell.font
+            cell.font = Font(name=FONT, size=f.size or 10, bold=f.bold, color=f.color, italic=f.italic)
 
 
 def input_cell(ws, ref, value, fmt=None, key=False):
@@ -90,10 +119,10 @@ def input_cell(ws, ref, value, fmt=None, key=False):
     return cell
 
 
-def label(ws, ref, text, bold=False):
+def label(ws, ref, text, bold=False, italic=False, size=10):
     cell = ws[ref]
     cell.value = text
-    cell.font = Font(name=FONT, size=10, bold=bold)
+    cell.font = Font(name=FONT, size=size, bold=bold, italic=italic)
     return cell
 
 
@@ -106,11 +135,23 @@ def title(ws, ref, text):
 def main(src, out):
     data = json.load(open(src))
     skus = data["skus"]
+    for s in skus:
+        s["display"] = display_name(s["sku_name"])
+    assert len({s["display"] for s in skus}) == len(skus), "display names must be unique"
     n = len(skus)
-    PL_FIRST = 5
     PL_LAST = PL_FIRST + n - 1
     thin = Side(style="thin", color="BFC5C9")
     box = Border(top=thin, bottom=thin, left=thin, right=thin)
+
+    def pl_col(c):
+        return get_column_letter(c)
+
+    name_rng = f"Pricelist!${pl_col(PL_NAME)}${PL_FIRST}:${pl_col(PL_NAME)}${PL_LAST}"
+
+    def pl_range(c):
+        return f"Pricelist!${pl_col(c)}${PL_FIRST}:${pl_col(c)}${PL_LAST}"
+
+    tier_hdr = f"Pricelist!${pl_col(PL_TIER0)}${PL_TIER_ROW}:${pl_col(PL_TIER0 + len(TIERS) - 1)}${PL_TIER_ROW}"
 
     wb = Workbook()
 
@@ -153,10 +194,8 @@ def main(src, out):
     dv_cur.add("B13")
 
     label(ws, "A21", "Margin assumptions by SKU family (gross margin on Acronis buy price)", bold=True)
-    label(ws, "A22", "These defaults are placeholders pending the Next Step margin policy decision (decisions-log.md, 2026-10-01). Change them here; every quote line uses them unless overridden.")
-    ws["A22"].font = Font(name=FONT, size=9, italic=True)
-    hdr = ["Margin family", "Default margin %", "Covers"]
-    for i, h in enumerate(hdr, start=1):
+    label(ws, "A22", "These defaults are placeholders pending the Next Step margin policy decision (decisions-log.md, 2026-10-01). Change them here; every quote line uses them unless overridden.", italic=True, size=9)
+    for i, h in enumerate(["Margin family", "Default margin %", "Covers"], start=1):
         ws.cell(23, i, h)
     style_header(ws, 23, 1, 3)
     MF_FIRST = 24
@@ -198,76 +237,76 @@ def main(src, out):
     # --------------------------------------------------------------- Pricelist
     pl = wb.create_sheet("Pricelist")
     title(pl, "A1", "Acronis price list — partner buy prices, USD per unit per month")
-    label(pl, "A2", f"Source: {data['source']}. Column O picks the price for the tier chosen in Inputs!B16.")
-    heads = ["Licensing group", "Category", "DC group", "SKU code", "SKU name", "Margin family"] + [f"Tier {t:,}" for t in TIERS] + ["Price at selected tier"]
+    label(pl, "A2", f"Source: {data['source']}. The last column picks the price for the tier chosen in Inputs!B16.")
+    heads = ["Licensing group", "Category", "DC group", "SKU code", "SKU (short name, used in dropdowns)", "Full Acronis SKU name", "Margin family"] + [f"Tier {t:,}" for t in TIERS] + ["Price at selected tier"]
     for i, h in enumerate(heads, start=1):
-        pl.cell(3, i, h)
-    style_header(pl, 3, 1, len(heads))
-    label(pl, "F4", "Commitment USD/month →")
+        pl.cell(PL_HEADER_ROW, i, h)
+    style_header(pl, PL_HEADER_ROW, 1, len(heads))
+    pl.row_dimensions[PL_HEADER_ROW].height = 30
+    label(pl, f"{pl_col(PL_FAMILY)}{PL_TIER_ROW}", "Commitment USD/month →", bold=True)
     for j, t in enumerate(TIERS):
-        c = pl.cell(4, 7 + j, t)
+        c = pl.cell(PL_TIER_ROW, PL_TIER0 + j, t)
         c.number_format = "#,##0"
         c.font = Font(name=FONT, size=10, bold=True)
     for i, s in enumerate(skus):
         r = PL_FIRST + i
-        pl.cell(r, 1, s["licensing_group"])
-        pl.cell(r, 2, s["category"])
-        pl.cell(r, 3, s["dc_group"])
-        pl.cell(r, 4, s["sku"])
-        pl.cell(r, 5, s["sku_name"])
-        pl.cell(r, 6, margin_family(s))
+        pl.cell(r, PL_GROUP, s["licensing_group"])
+        pl.cell(r, PL_CAT, s["category"])
+        pl.cell(r, PL_DC, s["dc_group"])
+        pl.cell(r, PL_CODE, s["sku"])
+        pl.cell(r, PL_NAME, s["display"])
+        pl.cell(r, PL_FULL, s["sku_name"])
+        pl.cell(r, PL_FAMILY, margin_family(s))
         for j, t in enumerate(TIERS):
-            c = pl.cell(r, 7 + j, s[f"usd_{t}"])
+            c = pl.cell(r, PL_TIER0 + j, s[f"usd_{t}"])
             c.number_format = "#,##0.0000"
-        c = pl.cell(r, 15, f"=INDEX($G{r}:$N{r},1,MATCH(Inputs!$B$16,$G$4:$N$4,0))")
+        first, last = pl_col(PL_TIER0), pl_col(PL_TIER0 + len(TIERS) - 1)
+        c = pl.cell(r, PL_SELECTED, f"=INDEX(${first}{r}:${last}{r},1,MATCH(Inputs!$B$16,${first}${PL_TIER_ROW}:${last}${PL_TIER_ROW},0))")
         c.number_format = "#,##0.0000"
-    widths = [24, 30, 9, 12, 95, 14] + [11] * 8 + [16]
+    widths = [24, 30, 9, 12, 70, 95, 14] + [11] * len(TIERS) + [16]
     for i, w in enumerate(widths, start=1):
         pl.column_dimensions[get_column_letter(i)].width = w
-    pl.freeze_panes = "F5"
-    pl.auto_filter.ref = f"A3:O{PL_LAST}"
+    pl.freeze_panes = f"{pl_col(PL_FULL)}{PL_FIRST}"
+    pl.auto_filter.ref = f"A{PL_HEADER_ROW}:{pl_col(PL_SELECTED)}{PL_LAST}"
 
     # ------------------------------------------------------------------- Quote
     q = wb.create_sheet("Quote")
-    title(q, "A1", "Quote builder (internal)")
-    label(q, "A2", "Customer:")
-    q["B2"] = "=Inputs!B10"
-    label(q, "A3", "Currency:")
-    q["B3"] = "=Inputs!B13"
-    label(q, "C3", "FX rate:")
+    title(q, "B1", "Quote builder (internal)")
+    label(q, "B2", "Customer")
+    q["C2"] = "=Inputs!B10"
+    label(q, "B3", "Currency / FX rate / commitment tier")
+    q["C3"] = "=Inputs!B13"
     q["D3"] = "=Inputs!B14"
     q["D3"].number_format = "0.0000"
-    label(q, "E3", "Tier:")
-    q["F3"] = "=Inputs!B16"
-    q["F3"].number_format = "#,##0"
-    label(q, "A5", "Pick a SKU name from the dropdown in column B and enter the quantity in column F. Override the margin in column J only when the deal needs it.")
-    q["A5"].font = Font(name=FONT, size=9, italic=True)
-    heads = ["#", "SKU name", "SKU code", "Category", "DC group", "Quantity", "Unit buy (USD)",
+    q["E3"] = "=Inputs!B16"
+    q["E3"].number_format = "#,##0"
+    label(q, "B5", "Pick a SKU from the dropdown in column B and enter the quantity in column F. Override the margin in column J only when the deal needs it.", italic=True, size=9)
+    heads = ["#", "SKU (short name)", "SKU code", "Category", "DC group", "Quantity", "Unit buy (USD)",
              "Margin family", "Default margin", "Margin override", "Margin used", "Unit sell (USD)",
              "Unit sell (local)", "Monthly buy (USD)", "Monthly sell (local)", "Annual sell (local)"]
     for i, h in enumerate(heads, start=1):
         q.cell(7, i, h)
     style_header(q, 7, 1, len(heads))
-    q.row_dimensions[7].height = 30
+    q.row_dimensions[7].height = 32
 
-    dv_sku = DataValidation(type="list", formula1=f"=Pricelist!$E${PL_FIRST}:$E${PL_LAST}", allow_blank=True)
-    dv_sku.error = "Pick a SKU name from the Pricelist sheet."
+    dv_sku = DataValidation(type="list", formula1=f"={name_rng}", allow_blank=True)
+    dv_sku.error = "Pick a SKU from the Pricelist sheet."
     q.add_data_validation(dv_sku)
-    sku_rng = f"Pricelist!$E${PL_FIRST}:$E${PL_LAST}"
     for r in range(QUOTE_FIRST, QUOTE_LAST + 1):
         q.cell(r, 1, r - QUOTE_FIRST + 1)
         b = q.cell(r, 2)
         b.font = Font(name=FONT, size=10, color=INPUT_BLUE)
+        b.alignment = Alignment(wrap_text=True, vertical="center")
         dv_sku.add(b)
-        m = f"MATCH($B{r},{sku_rng},0)"
-        q.cell(r, 3, f'=IF($B{r}="","",INDEX(Pricelist!$D${PL_FIRST}:$D${PL_LAST},{m}))')
-        q.cell(r, 4, f'=IF($B{r}="","",INDEX(Pricelist!$B${PL_FIRST}:$B${PL_LAST},{m}))')
-        q.cell(r, 5, f'=IF($B{r}="","",INDEX(Pricelist!$C${PL_FIRST}:$C${PL_LAST},{m}))')
+        m = f"MATCH($B{r},{name_rng},0)"
+        q.cell(r, 3, f'=IF($B{r}="","",INDEX({pl_range(PL_CODE)},{m}))')
+        q.cell(r, 4, f'=IF($B{r}="","",INDEX({pl_range(PL_CAT)},{m}))')
+        q.cell(r, 5, f'=IF($B{r}="","",INDEX({pl_range(PL_DC)},{m}))')
         f = q.cell(r, 6)
         f.font = Font(name=FONT, size=10, color=INPUT_BLUE)
         f.number_format = "#,##0"
-        q.cell(r, 7, f'=IF($B{r}="","",INDEX(Pricelist!$O${PL_FIRST}:$O${PL_LAST},{m}))').number_format = "#,##0.0000"
-        q.cell(r, 8, f'=IF($B{r}="","",INDEX(Pricelist!$F${PL_FIRST}:$F${PL_LAST},{m}))')
+        q.cell(r, 7, f'=IF($B{r}="","",INDEX({pl_range(PL_SELECTED)},{m}))').number_format = "#,##0.0000"
+        q.cell(r, 8, f'=IF($B{r}="","",INDEX({pl_range(PL_FAMILY)},{m}))')
         q.cell(r, 9, f'=IF($B{r}="","",INDEX(Inputs!$B${MF_FIRST}:$B${MF_LAST},MATCH($H{r},Inputs!$A${MF_FIRST}:$A${MF_LAST},0)))').number_format = "0.0%"
         j = q.cell(r, 10)
         j.font = Font(name=FONT, size=10, color=INPUT_BLUE)
@@ -278,49 +317,48 @@ def main(src, out):
         q.cell(r, 14, f'=IF($B{r}="","",$F{r}*$G{r})').number_format = "#,##0.00"
         q.cell(r, 15, f'=IF($B{r}="","",$F{r}*$M{r})').number_format = "#,##0.00"
         q.cell(r, 16, f'=IF($B{r}="","",$O{r}*12)').number_format = "#,##0.00"
+        q.row_dimensions[r].height = 27
         for c in range(1, 17):
-            q.cell(r, c).border = box
+            cell = q.cell(r, c)
+            cell.border = box
+            if c != 2:
+                cell.alignment = Alignment(vertical="center")
 
     T = QUOTE_LAST + 2
-    label(q, f"A{T}", "Totals", bold=True)
+    label(q, f"B{T}", "Totals", bold=True)
     lines = [
         ("Platform subtotal, monthly buy (USD)", f"=SUM(N{QUOTE_FIRST}:N{QUOTE_LAST})", "#,##0.00"),
-        ("Platform subtotal, monthly buy (local)", f"=B{T+1}*Inputs!B14", "#,##0.00"),
+        ("Platform subtotal, monthly buy (local)", f"=C{T+1}*Inputs!B14", "#,##0.00"),
         ("Platform subtotal, monthly sell (local)", f"=SUM(O{QUOTE_FIRST}:O{QUOTE_LAST})", "#,##0.00"),
         ("Protected workloads and seats (excludes storage lines)", f'=SUMIFS(F{QUOTE_FIRST}:F{QUOTE_LAST},H{QUOTE_FIRST}:H{QUOTE_LAST},"<>Storage",H{QUOTE_FIRST}:H{QUOTE_LAST},"<>Infrastructure",H{QUOTE_FIRST}:H{QUOTE_LAST},"<>Other")', "#,##0"),
-        ("Managed service fee, monthly (local)", f"=B{T+4}*Inputs!B{SF}+Inputs!B{SF+1}", "#,##0.00"),
-        ("Monthly total excluding VAT (local)", f"=B{T+3}+B{T+5}", "#,##0.00"),
-        ("VAT (local)", f"=B{T+6}*Inputs!B15", "#,##0.00"),
-        ("Monthly total including VAT (local)", f"=B{T+6}+B{T+7}", "#,##0.00"),
-        ("Annual total excluding VAT (local)", f"=B{T+6}*12", "#,##0.00"),
-        ("Contract value excluding VAT (local)", f"=B{T+6}*Inputs!B17", "#,##0.00"),
+        ("Managed service fee, monthly (local)", f"=C{T+4}*Inputs!B{SF}+Inputs!B{SF+1}", "#,##0.00"),
+        ("Monthly total excluding VAT (local)", f"=C{T+3}+C{T+5}", "#,##0.00"),
+        ("VAT (local)", f"=C{T+6}*Inputs!B15", "#,##0.00"),
+        ("Monthly total including VAT (local)", f"=C{T+6}+C{T+7}", "#,##0.00"),
+        ("Annual total excluding VAT (local)", f"=C{T+6}*12", "#,##0.00"),
+        ("Contract value excluding VAT (local)", f"=C{T+6}*Inputs!B17", "#,##0.00"),
         ("One-time services excluding VAT (local)", f"=Inputs!B{SF+2}+Inputs!B{SF+3}+Inputs!B{SF+4}", "#,##0.00"),
-        ("Monthly gross profit on platform (local)", f"=B{T+3}-B{T+2}", "#,##0.00"),
-        ("Blended platform margin", f"=IF(B{T+3}=0,0,B{T+12}/B{T+3})", "0.0%"),
-        ("Monthly gross profit including managed service (local)", f"=B{T+12}+B{T+5}", "#,##0.00"),
+        ("Monthly gross profit on platform (local)", f"=C{T+3}-C{T+2}", "#,##0.00"),
+        ("Blended platform margin", f"=IF(C{T+3}=0,0,C{T+12}/C{T+3})", "0.0%"),
+        ("Monthly gross profit including managed service (local)", f"=C{T+12}+C{T+5}", "#,##0.00"),
     ]
     for i, (text, formula, fmt) in enumerate(lines, start=1):
-        label(q, f"A{T+i}", text)
-        c = q[f"B{T+i}"]
+        bold = text.startswith(("Monthly total", "Annual", "Contract"))
+        label(q, f"B{T+i}", text, bold=bold)
+        c = q[f"C{T+i}"]
         c.value = formula
         c.number_format = fmt
-        c.font = Font(name=FONT, size=10, bold=text.startswith(("Monthly total", "Annual", "Contract")))
-    label(q, f"A{T+16}", "Gross profit here is sell minus Acronis buy; it excludes Next Step delivery cost and the difference between the commitment tier and actual portfolio consumption.")
-    q[f"A{T+16}"].font = Font(name=FONT, size=9, italic=True)
+        c.font = Font(name=FONT, size=10, bold=bold)
+    label(q, f"B{T+16}", "Gross profit here is sell minus Acronis buy; it excludes Next Step delivery cost and the difference between the commitment tier and actual portfolio consumption.", italic=True, size=9)
 
-    widths = [4, 70, 12, 26, 9, 10, 14, 14, 12, 12, 12, 14, 14, 16, 18, 18]
+    widths = [4, 64, 14, 26, 9, 10, 14, 14, 12, 12, 12, 14, 14, 16, 18, 18]
     for i, w in enumerate(widths, start=1):
         q.column_dimensions[get_column_letter(i)].width = w
     q.freeze_panes = "C8"
 
     # Example quote: Scenario A from 30-pricing/README.md (Saudi SMB, Ultimate Protection, Abu Dhabi G2)
-    example = [
-        ("SUPHMSENS", 2),
-        ("SUPJMSENS", 25),
-        ("SUPKMSENS", 30),
-        ("SBSTFNLOS", 30),
-    ]
-    by_code = {s["sku"]: s["sku_name"] for s in skus}
+    example = [("SUPHMSENS", 2), ("SUPJMSENS", 25), ("SUPKMSENS", 30), ("SBSTFNLOS", 30)]
+    by_code = {s["sku"]: s["display"] for s in skus}
     for i, (code, qty) in enumerate(example):
         q.cell(QUOTE_FIRST + i, 2, by_code[code])
         q.cell(QUOTE_FIRST + i, 6, qty)
@@ -328,30 +366,34 @@ def main(src, out):
 
     # ----------------------------------------------------------- Tier analysis
     ta = wb.create_sheet("Tier analysis")
-    title(ta, "A1", "This quote's Acronis buy cost at every commitment tier (USD per month)")
-    label(ta, "A2", "Shows what the same quantities cost Next Step at each tier. The tier applies to the whole Next Step portfolio; use this to judge whether a deal justifies moving up a tier.")
-    ta["A2"].font = Font(name=FONT, size=9, italic=True)
-    heads = ["#", "SKU name", "Quantity"] + [f"Tier {t:,}" for t in TIERS]
+    title(ta, "B1", "This quote's Acronis buy cost at every commitment tier (USD per month)")
+    label(ta, "B2", "Shows what the same quantities cost Next Step at each tier. The tier applies to the whole Next Step portfolio; use this to judge whether a deal justifies moving up a tier.", italic=True, size=9)
+    heads = ["#", "SKU (short name)", "Quantity"] + [f"Tier {t:,}" for t in TIERS]
     for i, h in enumerate(heads, start=1):
         ta.cell(4, i, h)
     style_header(ta, 4, 1, len(heads))
     for j, t in enumerate(TIERS):
         ta.cell(5, 4 + j, t).number_format = "#,##0"
         ta.cell(5, 4 + j).font = Font(name=FONT, size=10, bold=True)
-    label(ta, "C5", "Commitment →")
+    label(ta, "C5", "Commitment →", bold=True)
     TA_FIRST = 6
     for i in range(QUOTE_LINES):
         r = TA_FIRST + i
         qr = QUOTE_FIRST + i
         ta.cell(r, 1, i + 1)
-        ta.cell(r, 2, f"=Quote!B{qr}")
+        ta.cell(r, 2, f"=Quote!B{qr}").alignment = Alignment(wrap_text=True, vertical="center")
         ta.cell(r, 3, f'=IF(Quote!B{qr}="","",Quote!F{qr})').number_format = "#,##0"
         for j in range(len(TIERS)):
-            col = get_column_letter(7 + j)
-            c = ta.cell(r, 4 + j, f'=IF(Quote!$B{qr}="",0,Quote!$F{qr}*INDEX(Pricelist!${col}${PL_FIRST}:${col}${PL_LAST},MATCH(Quote!$B{qr},{sku_rng},0)))')
+            c = ta.cell(r, 4 + j, f'=IF(Quote!$B{qr}="",0,Quote!$F{qr}*INDEX({pl_range(PL_TIER0 + j)},MATCH(Quote!$B{qr},{name_rng},0)))')
             c.number_format = "#,##0.00"
+        for c in range(1, 4 + len(TIERS)):
+            if c != 2:
+                ta.cell(r, c).alignment = Alignment(vertical="center")
+        ta.row_dimensions[r].height = 27
     TA_LAST = TA_FIRST + QUOTE_LINES - 1
     R = TA_LAST + 1
+    last_tier_col = get_column_letter(3 + len(TIERS))
+    sel = f"INDEX($D${R}:${last_tier_col}${R},1,MATCH(Inputs!$B$16,$D$5:${last_tier_col}$5,0))"
     label(ta, f"B{R}", "Monthly buy cost of this quote (USD)", bold=True)
     label(ta, f"B{R+1}", "Saving versus selected tier (USD per month)")
     label(ta, f"B{R+2}", "Saving versus selected tier (%)")
@@ -362,13 +404,13 @@ def main(src, out):
         c.value = f"=SUM({col}{TA_FIRST}:{col}{TA_LAST})"
         c.number_format = "#,##0.00"
         c.font = Font(name=FONT, size=10, bold=True)
-        ta[f"{col}{R+1}"] = f"=INDEX($D${R}:$K${R},1,MATCH(Inputs!$B$16,$D$5:$K$5,0))-{col}{R}"
+        ta[f"{col}{R+1}"] = f"={sel}-{col}{R}"
         ta[f"{col}{R+1}"].number_format = "#,##0.00;(#,##0.00);-"
-        ta[f"{col}{R+2}"] = f"=IF(INDEX($D${R}:$K${R},1,MATCH(Inputs!$B$16,$D$5:$K$5,0))=0,0,{col}{R+1}/INDEX($D${R}:$K${R},1,MATCH(Inputs!$B$16,$D$5:$K$5,0)))"
+        ta[f"{col}{R+2}"] = f"=IF({sel}=0,0,{col}{R+1}/{sel})"
         ta[f"{col}{R+2}"].number_format = "0.0%;(0.0%);-"
         ta[f"{col}{R+3}"] = f'=IF({col}5=Inputs!$B$16,"selected","")'
     ta.column_dimensions["A"].width = 4
-    ta.column_dimensions["B"].width = 70
+    ta.column_dimensions["B"].width = 64
     ta.column_dimensions["C"].width = 14
     for j in range(len(TIERS)):
         ta.column_dimensions[get_column_letter(4 + j)].width = 13
@@ -387,25 +429,28 @@ def main(src, out):
     for i in range(QUOTE_LINES):
         r = SM_FIRST + i
         qr = QUOTE_FIRST + i
-        sm.cell(r, 1, f'=IF(Quote!B{qr}="","",Quote!B{qr})')
+        sm.cell(r, 1, f'=IF(Quote!B{qr}="","",Quote!B{qr})').alignment = Alignment(wrap_text=True, vertical="center")
         sm.cell(r, 2, f'=IF(Quote!B{qr}="","",Quote!F{qr})').number_format = "#,##0"
         sm.cell(r, 3, f'=IF(Quote!B{qr}="","",Quote!M{qr})').number_format = "#,##0.00"
         sm.cell(r, 4, f'=IF(Quote!B{qr}="","",Quote!O{qr})').number_format = "#,##0.00"
+        for c in (2, 3, 4):
+            sm.cell(r, c).alignment = Alignment(vertical="center")
+        sm.row_dimensions[r].height = 27
     SM_LAST = SM_FIRST + QUOTE_LINES - 1
     S = SM_LAST + 1
     label(sm, f"A{S}", "Managed service: operations, monitoring, restore tests, monthly report")
-    sm[f"B{S}"] = f"=Quote!B{T+4}"
+    sm[f"B{S}"] = f"=Quote!C{T+4}"
     sm[f"B{S}"].number_format = "#,##0"
-    sm[f"C{S}"] = f"=IF(Quote!B{T+4}=0,0,Quote!B{T+5}/Quote!B{T+4})"
+    sm[f"C{S}"] = f"=IF(Quote!C{T+4}=0,0,Quote!C{T+5}/Quote!C{T+4})"
     sm[f"C{S}"].number_format = "#,##0.00"
-    sm[f"D{S}"] = f"=Quote!B{T+5}"
+    sm[f"D{S}"] = f"=Quote!C{T+5}"
     sm[f"D{S}"].number_format = "#,##0.00"
     totals = [
-        ("Monthly subtotal excluding VAT", f"=Quote!B{T+6}"),
-        ("VAT", f"=Quote!B{T+7}"),
-        ("Monthly total including VAT", f"=Quote!B{T+8}"),
-        ("Annual equivalent excluding VAT", f"=Quote!B{T+9}"),
-        ("One-time services excluding VAT", f"=Quote!B{T+11}"),
+        ("Monthly subtotal excluding VAT", f"=Quote!C{T+6}"),
+        ("VAT", f"=Quote!C{T+7}"),
+        ("Monthly total including VAT", f"=Quote!C{T+8}"),
+        ("Annual equivalent excluding VAT", f"=Quote!C{T+9}"),
+        ("One-time services excluding VAT", f"=Quote!C{T+11}"),
     ]
     for i, (text, formula) in enumerate(totals, start=1):
         label(sm, f"A{S+i}", text, bold=True)
@@ -413,9 +458,8 @@ def main(src, out):
         c.value = formula
         c.number_format = "#,##0.00"
         c.font = Font(name=FONT, size=10, bold=True)
-    label(sm, f"A{S+7}", "Prices are per unit per month in the stated currency, billed monthly in advance, quantities reconciled quarterly, storage beyond included quotas billed per GB per month as listed.")
-    sm[f"A{S+7}"].font = Font(name=FONT, size=9, italic=True)
-    sm.column_dimensions["A"].width = 80
+    label(sm, f"A{S+7}", "Prices are per unit per month in the stated currency, billed monthly in advance, quantities reconciled quarterly, storage beyond included quotas billed per GB per month as listed.", italic=True, size=9)
+    sm.column_dimensions["A"].width = 72
     sm.column_dimensions["B"].width = 12
     sm.column_dimensions["C"].width = 22
     sm.column_dimensions["D"].width = 18
@@ -427,8 +471,6 @@ def main(src, out):
     for i, h in enumerate(heads, start=1):
         dc.cell(3, i, h)
     style_header(dc, 3, 1, 6)
-    import csv
-    import os
     dcs_path = os.path.join(os.path.dirname(src), "acronis-datacenters.csv")
     with open(dcs_path) as f:
         for i, row in enumerate(csv.DictReader(f)):

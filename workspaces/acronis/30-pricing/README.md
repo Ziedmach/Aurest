@@ -178,7 +178,7 @@ Built by `../90-templates/build-quote-model.py` from the JSON export. Six sheets
 | Sheet | Purpose |
 |---|---|
 | `Inputs` | Customer, reference, date, currency, FX rate (local per USD), VAT, Next Step commitment tier, term, validity, rounding. Margin defaults by SKU family. Managed-service and one-time fees. Blue cells are inputs; yellow cells are the ones to set for every quote. |
-| `Pricelist` | All 119 SKUs with the 8 tier prices and a "price at selected tier" column that follows the tier chosen in Inputs. Replace this sheet (or rebuild the file) when a new calculator version arrives. |
+| `Pricelist` | All 119 SKUs with a short display name (used in dropdowns), the full Acronis SKU name, the 8 tier prices and a "price at selected tier" column that follows the tier chosen in Inputs. Rebuild the file when a new calculator version arrives. |
 | `Quote` | Up to 30 lines. Pick the SKU name from the dropdown, enter the quantity, optionally override the margin. Each line shows buy price, margin, unit sell in USD and local currency, monthly buy, monthly sell and annual sell. Totals block adds the managed-service fee, VAT, annual and contract values, gross profit and blended margin. |
 | `Tier analysis` | The same quantities costed at every commitment tier, with the saving versus the selected tier. Use it to judge whether a deal justifies moving the portfolio up a tier. |
 | `Summary` | Customer-facing lines and totals in the quote currency, ready to paste into section 5 of the proposal template. |
