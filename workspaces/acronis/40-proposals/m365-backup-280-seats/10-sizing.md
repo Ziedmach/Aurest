@@ -25,17 +25,20 @@ Alternatives if the customer's situation differs:
 |---|---|---|
 | Price list | Acronis Cyber Cloud Calculator C26.09, USD | In force |
 | Data center | Abu Dhabi (G2) | Assumption; confirm with the customer |
-| Next Step commitment tier | 1,000 USD per month | Assumption; confirm Next Step's actual tier |
-| Buy price | 2.85 USD per seat per month, 798 USD per month, 9,576 USD per year | From the list |
-| Margin | 35 percent (Backup & DR placeholder) | Placeholder; margin policy not yet decided |
+| Next Step commitment tier | 7,000 USD per month | Set by Zied, 10 November 2026 |
+| Buy price | 2.27 USD per seat per month, 635.60 USD per month, 7,627.20 USD per year | From the list, tier 7,000 |
+| Margin | 20 percent gross margin on the sell price (buy ÷ 0.80, equal to a 25 percent markup on cost) | Set by Zied for this quote, 10 November 2026; entered as a line override in `quote.xlsx` |
 | FX | 3.75 SAR per USD | SAR peg |
 | VAT | 15 percent | KSA |
 | Managed service fee | 0 (included in the margin for this single-service deal) | Decision for this quote |
 | Onboarding | 0 (tenant setup included) | Decision for this quote |
 
-Result: 16.44 SAR per seat per month; 4,603.20 SAR per month; 55,238.40 SAR per year
-excluding VAT; 63,524.16 SAR per year including VAT. Gross profit about 1,610.70 SAR per
-month (19,328 SAR per year) before delivery cost.
+Result: 10.64 SAR per seat per month; 2,979.20 SAR per month; 35,750.40 SAR per year
+excluding VAT; 41,112.96 SAR per year including VAT. Gross profit 595.70 SAR per month
+(7,148 SAR per year) before delivery cost.
+
+If "20 percent margin" was meant as a 20 percent markup on cost instead, the unit price is
+10.22 SAR per seat per month and the year is 34,339.20 SAR excluding VAT.
 
 ## Sensitivity (annual, 280 seats, SAR excluding VAT)
 
@@ -43,6 +46,7 @@ month (19,328 SAR per year) before delivery cost.
 |---|---|---|---|---|
 | Abu Dhabi (G2) | 250 | 54,096 | 62,429 | 73,752 |
 | Abu Dhabi (G2) | 1,000 | 47,880 | 55,238 | 65,285 |
+| **Abu Dhabi (G2)** | **7,000** | **38,136 (20 percent: 35,750)** | **43,938** | **51,927** |
 | Europe (G1) | 250 | 40,320 | 46,536 | 54,970 |
 | Europe (G1) | 1,000 | 35,616 | 41,093 | 48,552 |
 | Next Step or Azure storage (seat licence only) | 1,000 | 20,832 | 24,024 | 28,392 |
@@ -54,8 +58,7 @@ Buy cost of this deal alone by tier (USD per month): 901.60 at tier 250; 856.80 
 
 1. Confirm the customer name, country and whether data must stay in-Kingdom. If
    in-Kingdom is required, switch to `SRAAMSENS` with Next Step hosted storage and re-price.
-2. Confirm Next Step's commitment tier and the margin to apply; update `Inputs` in
-   `quote.xlsx`, and transfer the figures to `20-quote.md`.
+2. Tier 7,000 and 20 percent margin applied (10 November 2026). Revisit if the margin policy lands elsewhere.
 3. Confirm whether the customer wants email only (consider email archiving) or full
    Microsoft 365 protection (the quoted SKU).
 4. Decide whether to show the geo-redundant and archiving options with prices.

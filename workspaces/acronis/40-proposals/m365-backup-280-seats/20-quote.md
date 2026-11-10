@@ -34,13 +34,13 @@ Middle East, with unlimited Acronis-hosted cloud storage included per seat.
 
 | Line | Quantity | Unit price per seat per month (SAR) | Monthly (SAR) | Annual (SAR) |
 |---|---|---|---|---|
-| Acronis backup for Microsoft 365 seats, unlimited Acronis-hosted cloud storage included, yearly subscription | 280 | 16.44 | 4,603.20 | 55,238.40 |
-| **Subtotal excluding VAT** | | | **4,603.20** | **55,238.40** |
-| VAT 15 percent | | | 690.48 | 8,285.76 |
-| **Total including VAT** | | | **5,293.68** | **63,524.16** |
+| Acronis backup for Microsoft 365 seats, unlimited Acronis-hosted cloud storage included, yearly subscription | 280 | 10.64 | 2,979.20 | 35,750.40 |
+| **Subtotal excluding VAT** | | | **2,979.20** | **35,750.40** |
+| VAT 15 percent | | | 446.88 | 5,362.56 |
+| **Total including VAT** | | | **3,426.08** | **41,112.96** |
 
-Amount in words (annual, including VAT): sixty-three thousand five hundred twenty-four
-Saudi Riyals and sixteen halalas.
+Amount in words (annual, including VAT): forty-one thousand one hundred twelve Saudi
+Riyals and ninety-six halalas.
 
 ## Options
 
