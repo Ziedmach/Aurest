@@ -73,7 +73,7 @@ def display_name(name):
 
 def margin_family(sku):
     group, cat, name = sku["licensing_group"], sku["category"], sku["sku_name"].lower()
-    storage_words = ("per gb", "storage", "compute point", "public ip", "geo-redundant")
+    storage_words = ("per gb", "compute point", "public ip", "geo-redundant")  # not the bare word "storage": seat SKUs with included storage are workloads
     if group == "Solution-based licensing":
         if cat in ("Additional Storage", "Geo-Replication", "Disaster Recovery Infrastructure"):
             return "Storage"
