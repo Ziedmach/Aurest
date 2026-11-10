@@ -21,7 +21,8 @@ Middle East, with unlimited Acronis-hosted cloud storage included per seat.
 - Protected data per seat: Exchange Online mailbox (email, calendar, contacts, tasks),
   OneDrive for Business, SharePoint Online sites, Microsoft Teams (chats, channels, files).
 - Backup frequency: multiple times a day; retention unlimited within the subscription term.
-- Storage: unlimited, Acronis cloud data center in Abu Dhabi, United Arab Emirates
+- Storage: unlimited Acronis-hosted cloud storage included in the seat price, subject to the
+  Acronis fair-use policy; Acronis cloud data center in Abu Dhabi, United Arab Emirates
   (ISO 27001 and IEC 22237 certified); data encrypted in transit and at rest (AES-256).
 - Restore: granular (single email, file, site, chat) and full, point-in-time, by the
   Next Step service desk or by the client's administrator through a self-service console.
