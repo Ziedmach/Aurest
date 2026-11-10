@@ -39,10 +39,10 @@ over a 12-month term. VAT at 15 percent is shown separately.
 |---|---|---|---|---|---|---|
 | **A** | **Annual, paid in advance** | **10.64** | **35,750.40** | **5,362.56** | **41,112.96** | **35,750.40** |
 | B | Quarterly, paid in advance | 12.16 | 10,214.40 | 1,532.16 | 11,746.56 | 40,857.60 |
-| C | Monthly, paid in advance | 15.48 | 4,334.40 | 650.16 | 4,984.56 | 52,012.80 |
+| C | Monthly, paid in advance | 14.19 | 3,973.20 | 595.98 | 4,569.18 | 47,678.40 |
 
 Option A, annual payment, is the recommended option: it is 12.5 percent lower than quarterly
-billing and 31 percent lower than monthly billing over the year.
+billing and 25 percent lower than monthly billing over the year.
 
 Amount in words, option A (annual, including VAT): forty-one thousand one hundred twelve
 Saudi Riyals and ninety-six halalas.

@@ -27,7 +27,7 @@ Alternatives if the customer's situation differs:
 | Data center | Abu Dhabi (G2) | Assumption; confirm with the customer |
 | Next Step commitment tier | 7,000 USD per month | Set by Zied, 10 November 2026 |
 | Buy price | 2.27 USD per seat per month, 635.60 USD per month, 7,627.20 USD per year | From the list, tier 7,000 |
-| Margin | By billing frequency: annual 20 percent, quarterly 30 percent, monthly 45 percent (gross margin on the sell price, sell = buy ÷ (1 − margin)) | Set by Zied, 10 November 2026; see the `Payment options` sheet in `quote.xlsx`; the Quote sheet line carries the annual option |
+| Margin | By billing frequency: annual 20 percent, quarterly 30 percent, monthly 40 percent (gross margin on the sell price, sell = buy ÷ (1 − margin)) | Set by Zied, 10 November 2026; see the `Payment options` sheet in `quote.xlsx`; the Quote sheet line carries the annual option |
 | FX | 3.75 SAR per USD | SAR peg |
 | VAT | 15 percent | KSA |
 | Managed service fee | 0 (included in the margin for this single-service deal) | Decision for this quote |
@@ -39,7 +39,7 @@ Result (SAR, 280 seats, buy 2.27 USD per seat per month at tier 7,000):
 |---|---|---|---|---|---|
 | A annual | 20 percent | 10.64 | 35,750.40 | 41,112.96 | 7,148.40 |
 | B quarterly | 30 percent | 12.16 | 40,857.60 | 46,986.24 | 12,255.60 |
-| C monthly | 45 percent | 15.48 | 52,012.80 | 59,814.72 | 23,410.80 |
+| C monthly | 40 percent | 14.19 | 47,678.40 | 54,830.16 | 19,076.40 |
 
 Buy cost is 2,383.50 SAR per month (28,602 SAR per year) in every option. Acronis bills Next
 Step monthly on consumption whatever the customer's billing frequency, so option A carries
