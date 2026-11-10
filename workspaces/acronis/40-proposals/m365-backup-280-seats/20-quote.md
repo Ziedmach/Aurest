@@ -28,19 +28,24 @@ Middle East, with unlimited Acronis-hosted cloud storage included per seat.
 - Included service: tenant setup, Microsoft 365 connector authorisation, protection policy
   configuration, automatic protection of new users, monthly protection report, service desk
   support during business hours.
-- Term: 12 months, billed annually in advance.
+- Term: 12 months. Billing frequency per the option selected below.
 
 ## Price
 
-| Line | Quantity | Unit price per seat per month (SAR) | Monthly (SAR) | Annual (SAR) |
-|---|---|---|---|---|
-| Acronis backup for Microsoft 365 seats, unlimited Acronis-hosted cloud storage included, yearly subscription | 280 | 10.64 | 2,979.20 | 35,750.40 |
-| **Subtotal excluding VAT** | | | **2,979.20** | **35,750.40** |
-| VAT 15 percent | | | 446.88 | 5,362.56 |
-| **Total including VAT** | | | **3,426.08** | **41,112.96** |
+Three payment options for the same scope. Prices in SAR, per seat per month, for 280 seats
+over a 12-month term. VAT at 15 percent is shown separately.
 
-Amount in words (annual, including VAT): forty-one thousand one hundred twelve Saudi
-Riyals and ninety-six halalas.
+| Option | Billing | Unit price per seat per month | Amount per billing period excl. VAT | VAT per period | Amount per billing period incl. VAT | Annual total excl. VAT |
+|---|---|---|---|---|---|---|
+| **A** | **Annual, paid in advance** | **10.64** | **35,750.40** | **5,362.56** | **41,112.96** | **35,750.40** |
+| B | Quarterly, paid in advance | 12.16 | 10,214.40 | 1,532.16 | 11,746.56 | 40,857.60 |
+| C | Monthly, paid in advance | 15.48 | 4,334.40 | 650.16 | 4,984.56 | 52,012.80 |
+
+Option A, annual payment, is the recommended option: it is 12.5 percent lower than quarterly
+billing and 31 percent lower than monthly billing over the year.
+
+Amount in words, option A (annual, including VAT): forty-one thousand one hundred twelve
+Saudi Riyals and ninety-six halalas.
 
 ## Options
 
@@ -53,8 +58,8 @@ Riyals and ninety-six halalas.
 
 ## Terms
 
-- Prices are per seat per month, invoiced annually in advance for 280 seats; seats added
-  during the term are invoiced prorated at the same unit price.
+- Prices are per seat per month for 280 seats, invoiced in advance at the frequency of the
+  selected option; seats added during the term are invoiced prorated at the same unit price.
 - Prices include the Acronis platform licence, unlimited Acronis-hosted storage for the
   protected Microsoft 365 data, and the Next Step service described above.
 - Not included: Microsoft 365 licences, on-site work, recovery of data created before the

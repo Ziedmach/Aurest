@@ -27,18 +27,24 @@ Alternatives if the customer's situation differs:
 | Data center | Abu Dhabi (G2) | Assumption; confirm with the customer |
 | Next Step commitment tier | 7,000 USD per month | Set by Zied, 10 November 2026 |
 | Buy price | 2.27 USD per seat per month, 635.60 USD per month, 7,627.20 USD per year | From the list, tier 7,000 |
-| Margin | 20 percent gross margin on the sell price (buy ÷ 0.80, equal to a 25 percent markup on cost) | Set by Zied for this quote, 10 November 2026; entered as a line override in `quote.xlsx` |
+| Margin | By billing frequency: annual 20 percent, quarterly 30 percent, monthly 45 percent (gross margin on the sell price, sell = buy ÷ (1 − margin)) | Set by Zied, 10 November 2026; see the `Payment options` sheet in `quote.xlsx`; the Quote sheet line carries the annual option |
 | FX | 3.75 SAR per USD | SAR peg |
 | VAT | 15 percent | KSA |
 | Managed service fee | 0 (included in the margin for this single-service deal) | Decision for this quote |
 | Onboarding | 0 (tenant setup included) | Decision for this quote |
 
-Result: 10.64 SAR per seat per month; 2,979.20 SAR per month; 35,750.40 SAR per year
-excluding VAT; 41,112.96 SAR per year including VAT. Gross profit 595.70 SAR per month
-(7,148 SAR per year) before delivery cost.
+Result (SAR, 280 seats, buy 2.27 USD per seat per month at tier 7,000):
 
-If "20 percent margin" was meant as a 20 percent markup on cost instead, the unit price is
-10.22 SAR per seat per month and the year is 34,339.20 SAR excluding VAT.
+| Option | Margin | Unit sell per seat per month | Annual excl. VAT | Annual incl. VAT | Annual gross profit |
+|---|---|---|---|---|---|
+| A annual | 20 percent | 10.64 | 35,750.40 | 41,112.96 | 7,148.40 |
+| B quarterly | 30 percent | 12.16 | 40,857.60 | 46,986.24 | 12,255.60 |
+| C monthly | 45 percent | 15.48 | 52,012.80 | 59,814.72 | 23,410.80 |
+
+Buy cost is 2,383.50 SAR per month (28,602 SAR per year) in every option. Acronis bills Next
+Step monthly on consumption whatever the customer's billing frequency, so option A carries
+the cash-flow benefit and options B and C carry the collection risk, which the higher margins
+compensate.
 
 ## Sensitivity (annual, 280 seats, SAR excluding VAT)
 
@@ -58,7 +64,7 @@ Buy cost of this deal alone by tier (USD per month): 901.60 at tier 250; 856.80 
 
 1. Confirm the customer name, country and whether data must stay in-Kingdom. If
    in-Kingdom is required, switch to `SRAAMSENS` with Next Step hosted storage and re-price.
-2. Tier 7,000 and 20 percent margin applied (10 November 2026). Revisit if the margin policy lands elsewhere.
+2. Tier 7,000 and the three billing-frequency margins applied (10 November 2026). Revisit if the margin policy lands elsewhere.
 3. Confirm whether the customer wants email only (consider email archiving) or full
    Microsoft 365 protection (the quoted SKU).
 4. Decide whether to show the geo-redundant and archiving options with prices.
