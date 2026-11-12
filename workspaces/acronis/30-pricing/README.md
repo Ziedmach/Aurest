@@ -180,6 +180,7 @@ Built by `../90-templates/build-quote-model.py` from the JSON export. Six sheets
 | `Inputs` | Customer, reference, date, currency, FX rate (local per USD), VAT, Next Step commitment tier, term, validity, rounding. Margin defaults by SKU family. Managed-service and one-time fees. Blue cells are inputs; yellow cells are the ones to set for every quote. |
 | `Pricelist` | All 119 SKUs with a short display name (used in dropdowns), the full Acronis SKU name, the 8 tier prices and a "price at selected tier" column that follows the tier chosen in Inputs. Rebuild the file when a new calculator version arrives. |
 | `Quote` | Up to 30 lines. Pick the SKU name from the dropdown, enter the quantity, optionally override the margin. Each line shows buy price, margin, unit sell in USD and local currency, monthly buy, monthly sell and annual sell. Totals block adds the managed-service fee, VAT, annual and contract values, gross profit and blended margin. |
+| `Payment options` | Every quote line priced three ways from the same buy price: annual (20 percent), quarterly (30 percent) and monthly (40 percent) billing, with per-period and annual totals, VAT and gross profit. Margins are blue inputs. |
 | `Tier analysis` | The same quantities costed at every commitment tier, with the saving versus the selected tier. Use it to judge whether a deal justifies moving the portfolio up a tier. |
 | `Summary` | Customer-facing lines and totals in the quote currency, ready to paste into section 5 of the proposal template. |
 | `Data centers` | Reference list of Acronis data centers and storage groups. |
@@ -204,6 +205,19 @@ python3 workspaces/acronis/90-templates/build-quote-model.py workspaces/acronis/
 
 then open the file in Excel or LibreOffice once so every formula is recalculated before
 sharing it.
+
+### Creating a customer quote
+
+```bash
+python3 workspaces/acronis/90-templates/new-quote.py \
+  --model workspaces/acronis/30-pricing/acronis-quote-model.xlsx \
+  --out workspaces/acronis/40-proposals/<customer-slug>/quote.xlsx \
+  --customer "Name" --ref NS-ACR-2026-00n --date YYYY-MM-DD --currency SAR --fx 3.75 --vat 0.15 \
+  --tier 7000 --term 12 --line SRJAMSENS=50 --line SPFAMSENS=20 --margin 0.20
+```
+
+Then open the file once in Excel or LibreOffice (or run the LibreOffice recalculation) so the
+formulas carry values, and transfer the figures to the quotation document.
 
 ## 6. Refreshing this reference
 

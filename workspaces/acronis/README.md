@@ -14,10 +14,10 @@ Start with `CLAUDE.md` (standing brief and rules), then the folder you need.
 | `10-strategy/` | `partnership-strategy.md`, `90-day-plan.md`, `decisions-log.md` | Draft for review |
 | `20-gtm/` | `gtm-saudi-arabia.md`, `gtm-africa.md`, `offer-catalogue.md`, `icp-and-personas.md`, `messaging.md`, `battlecards.md` | Draft for review |
 | `30-pricing/` | `README.md` (pricing guide), `acronis-quote-model.xlsx`, CSV and JSON exports, calculator source | Complete for C26.09; quote model built with placeholder margins |
-| `40-proposals/` | `proposal-template.md`, `one-pager-template.md`, `customer-template/` | Templates ready |
+| `40-proposals/` | `proposal-template.md`, `one-pager-template.md`, `customer-template/`, customer quotes (`m365-backup-280-seats/`, `veeam-replacement-50-m365-20-instances/`) | Templates ready; two quotes issued |
 | `50-co-sell/` | `acronis-co-sell-plan.md`, `channel-partner-motion.md`, `qbr-template.md` | Draft for review |
 | `60-enablement/` | `enablement-plan.md`, `demo-scripts.md`, `customer-onboarding-checklist.md` | Draft for review |
-| `90-templates/` | `export-pricelist.py`, `build-quote-model.py` | Working |
+| `90-templates/` | `export-pricelist.py`, `build-quote-model.py`, `new-quote.py` | Working |
 
 ## Roadmap for this workspace
 

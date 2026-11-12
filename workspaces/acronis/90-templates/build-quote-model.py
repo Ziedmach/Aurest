@@ -364,6 +364,67 @@ def main(src, out):
         q.cell(QUOTE_FIRST + i, 6, qty)
     q.cell(QUOTE_FIRST, 2).comment = Comment("Example rows: Scenario A from the pricing guide (2 servers, 25 workstations, 30 Microsoft 365 seats, 30 awareness-training users on Ultimate Protection, Abu Dhabi G2). Replace with the customer's quantities.", "Next Step")
 
+    # --------------------------------------------------------- Payment options
+    po = wb.create_sheet("Payment options")
+    title(po, "B1", "Payment options — same scope, margin by billing frequency")
+    label(po, "B2", "Each quote line is priced three ways from the same buy price. Margins are blue inputs (gross margin on the sell price: sell = buy / (1 - margin)). Quantities and buy prices come from the Quote sheet; FX, VAT and rounding from Inputs.", italic=True, size=9)
+    label(po, "B4", "Option", bold=True); label(po, "C4", "Billing", bold=True); label(po, "D4", "Margin", bold=True); label(po, "E4", "Months per period", bold=True)
+    PO_OPTS = [("A", "Annual, paid in advance", 0.20, 12), ("B", "Quarterly, paid in advance", 0.30, 3), ("C", "Monthly, paid in advance", 0.40, 1)]
+    for i, (o, billing, mg, months) in enumerate(PO_OPTS):
+        r = 5 + i
+        label(po, f"B{r}", o); label(po, f"C{r}", billing)
+        input_cell(po, f"D{r}", mg, "0%")
+        input_cell(po, f"E{r}", months, "0")
+    heads = ["#", "SKU (short name)", "Quantity", "Unit buy (USD)",
+             "A unit sell (local)", "A monthly (local)", "B unit sell (local)", "B monthly (local)", "C unit sell (local)", "C monthly (local)"]
+    PO_HDR = 9
+    for i, h in enumerate(heads, start=1):
+        po.cell(PO_HDR, i, h)
+    style_header(po, PO_HDR, 1, len(heads))
+    po.row_dimensions[PO_HDR].height = 30
+    PO_FIRST = PO_HDR + 1
+    for i in range(QUOTE_LINES):
+        r = PO_FIRST + i
+        qr = QUOTE_FIRST + i
+        po.cell(r, 1, i + 1)
+        po.cell(r, 2, f'=IF(Quote!B{qr}="","",Quote!B{qr})').alignment = Alignment(wrap_text=True, vertical="center")
+        po.cell(r, 3, f'=IF(Quote!B{qr}="","",Quote!F{qr})').number_format = "#,##0"
+        po.cell(r, 4, f'=IF(Quote!B{qr}="","",Quote!G{qr})').number_format = "#,##0.0000"
+        for j in range(3):
+            mrow = 5 + j
+            ucol, mcol = 5 + 2 * j, 6 + 2 * j
+            po.cell(r, ucol, f'=IF(Quote!B{qr}="","",ROUND($D{r}/(1-$D${mrow})*Inputs!$B$14,Inputs!$B$19))').number_format = "#,##0.00"
+            po.cell(r, mcol, f'=IF(Quote!B{qr}="","",$C{r}*{get_column_letter(ucol)}{r})').number_format = "#,##0.00"
+        for c in range(1, len(heads) + 1):
+            if c != 2:
+                po.cell(r, c).alignment = Alignment(vertical="center")
+        po.row_dimensions[r].height = 27
+    PO_LAST = PO_FIRST + QUOTE_LINES - 1
+    S = PO_LAST + 2
+    sheads = ["", "Option", "Billing", "Margin", "Monthly excl. VAT (local)", "Per billing period excl. VAT (local)", "VAT per period (local)", "Per billing period incl. VAT (local)", "Annual excl. VAT (local)", "Annual incl. VAT (local)", "Annual gross profit (local)"]
+    for i, h in enumerate(sheads, start=1):
+        po.cell(S, i, h)
+    style_header(po, S, 2, len(sheads))
+    po.row_dimensions[S].height = 42
+    for j, (o, billing, mg, months) in enumerate(PO_OPTS):
+        r = S + 1 + j
+        mcol = get_column_letter(6 + 2 * j)
+        label(po, f"B{r}", o, bold=True); label(po, f"C{r}", billing)
+        po[f"D{r}"] = f"=D{5 + j}"; po[f"D{r}"].number_format = "0%"
+        po[f"E{r}"] = f"=SUM({mcol}{PO_FIRST}:{mcol}{PO_LAST})"
+        po[f"F{r}"] = f"=E{r}*E{5 + j}"
+        po[f"G{r}"] = f"=F{r}*Inputs!$B$15"
+        po[f"H{r}"] = f"=F{r}+G{r}"
+        po[f"I{r}"] = f"=E{r}*12"
+        po[f"J{r}"] = f"=I{r}*(1+Inputs!$B$15)"
+        po[f"K{r}"] = f"=I{r}-Quote!$C${T + 1}*Inputs!$B$14*12"
+        for col in "EFGHIJK":
+            po[f"{col}{r}"].number_format = "#,##0.00"
+    label(po, f"B{S + 5}", "Gross profit is annual sell minus Acronis buy at the selected tier; it excludes delivery cost and any managed-service fee, which is not part of these options.", italic=True, size=9)
+    for col, w in zip("ABCDEFGHIJK", [4, 56, 26, 14, 18, 20, 18, 20, 18, 18, 18]):
+        po.column_dimensions[col].width = w
+    po.freeze_panes = f"C{PO_FIRST}"
+
     # ----------------------------------------------------------- Tier analysis
     ta = wb.create_sheet("Tier analysis")
     title(ta, "B1", "This quote's Acronis buy cost at every commitment tier (USD per month)")
