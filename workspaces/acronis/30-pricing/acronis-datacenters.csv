@@ -1,0 +1,40 @@
+group,country,dc,geo_redundancy,cyber_employee,cyber_frame_cloud
+G1,USA,Phoenix,True,True,True
+G1,USA,Ashburn,True,True,True
+G1,Germany,Frankfurt,True,False,True
+G1,Switzerland,Lupfig,False,False,True
+G1,UK,London,True,True,True
+G1,Japan,Nagano,False,False,True
+G1,Japan,Kanagawa,False,False,False
+G1,Germany,Cologne,True,False,True
+G1,France,Strasbourg,False,False,True
+G1,USA,St.Louis,False,True,False
+G1,Singapore,Singapore,False,False,True
+G1,Australia,Sydney,False,True,True
+G1,Canada,Vancouver,True,True,True
+G1,Canada,Toronto,True,True,True
+G1,New Zealand,Auckland,False,False,True
+G1,Liechtenstein,Balzers,False,False,False
+G1,Indonesia,Jakarta,False,False,True
+G1,India,Mumbai,False,False,True
+G1,Spain,Valencia,False,False,True
+G1,Israel,Tel Aviv,False,False,True
+G1,Portugal,Lisbon,False,False,True
+G1,Korea,Seoul,False,False,True
+G1,Czech Republic,Prague,False,False,True
+G1,Greece,Thessaloniki,False,False,True
+G1,Brazil,Sao Paulo,True,False,True
+G1,Poland,Warsaw,False,False,True
+G1,Austria,Vienna,False,False,True
+G1,Denmark,Billund,False,False,True
+G1,Bulgaria,Sofia,False,False,True
+G1,Turkey,Istanbul,False,False,True
+G1,Norway,Oslo,False,False,True
+G1,Finland,Helsinki,False,False,True
+G1,Italy,Rome,False,False,True
+G1,Sweden,Goteborg,False,False,True
+G1,Mexico,Mexico City,False,False,True
+G1,Malaysia,Kuala Lumpur,False,False,True
+G2,South Africa,Johannesburg,False,False,True
+G2,UAE,Abu Dhabi,False,False,True
+G2,Taiwan,Taipei,False,False,True
